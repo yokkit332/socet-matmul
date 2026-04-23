@@ -17,7 +17,7 @@ module tb_intro_systems_accelerator();
     bus_protocol_if busif();
 
     // DUT
-    matmul DUT (
+    intro_systems_accelerator DUT (
         .CLK(CLK),
         .nRST(nRST),
         .busif(busif)
@@ -186,29 +186,6 @@ module tb_intro_systems_accelerator();
 
     read_word(32'h38, 32'h01AA01E4);  // C[3][0]=426, C[3][1]=484
     read_word(32'h3C, 32'h021E0258);  // C[3][2]=542, C[3][3]=600
-    /*
-	repeat(50) @(posedge CLK);
-	read_word(32'h4, 32'h1); // expect done = 1 in status reg
-	read_word(32'h8, 32'd32); // expect output reg counting 32 1's
-
-	// test case 2: input a number with all bits set to 0
-	write_word(32'h0, 32'h0);
-	repeat(50) @(posedge CLK);
-	read_word(32'h4, 32'h1); // expect done = 1 in status reg
-	read_word(32'h8, 32'd0); // expect output reg to be 0
-
-	// test case 3: input a number with alternating 1, 0 bits
-	write_word(32'h0, 32'b01010101010101010101010101010101);
-	repeat(50) @(posedge CLK);
-	read_word(32'h4, 32'h1); // expect done = 1 in status reg
-	read_word(32'h8, 32'd16); // expect 16 1's in output reg
-
-	// test case 4: test case with 1's and 0's in random places
-	write_word(32'h0, 32'b10100011001101111100001001000001);
-	repeat(50) @(posedge CLK);
-	read_word(32'h4, 32'h1); // expect done = 1 in status reg
-	read_word(32'h8, 32'd14); // expect 14 1's in output reg
-    */
 
         $finish;
     end
