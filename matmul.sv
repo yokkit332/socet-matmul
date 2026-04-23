@@ -38,7 +38,7 @@ module matmul
     logic colC_half;
 
     // counter to write to mmio 8 times 
-    logic [2:0] mmio_write_count, mmio_write_count_n;
+    logic [3:0] mmio_write_count, mmio_write_count_n;
     // define FSM states
     typedef enum logic [2:0] {
         IDLE,
@@ -148,8 +148,8 @@ module matmul
         LOAD: next_state = start ? COMPUTE : LOAD;
         COMPUTE: next_state = (k==3) ? TRANSFER : COMPUTE;
         TRANSFER: next_state = WRITE;
-        WRITE: next_state = (mmio_write_count == 3'd7) ? DONE : WRITE;
-	    DONE: next_state = IDLE;
+        WRITE: next_state = (mmio_write_count == 4'd8) ? DONE : WRITE;
+	DONE: next_state = IDLE;
         default: next_state = IDLE;
 
         endcase
@@ -161,26 +161,26 @@ module matmul
         done = 1'b0;
         mac_en = 1'b0;
         mac_clr = 1'b1;
-	    mmio_write_count_n = mmio_write_count;
-	    k_n = k;
+	mmio_write_count_n = mmio_write_count;
+	k_n = k;
         case(state)
 
             COMPUTE: begin
                 mac_en = 1'b1;
                 mac_clr = 1'b0;
-		        k_n = k+1;
+		k_n = k+1;
             end
-            
+
             WRITE: begin
-                done = 1'b1;
+		done = 1'b1;
                 if(busif.ren && busif.addr >= addr_C && busif.addr < addr_start)
-                    mmio_write_count_n = mmio_write_count + 3'b1;
+                    mmio_write_count_n = mmio_write_count + 4'b1;
                 
                 
             end
 
-	        TRANSFER: begin
-		    
+	    DONE: begin
+		    done = 1'b0;
 	        end
             default:begin end
 
@@ -195,17 +195,19 @@ module matmul
                             regC[x][y] <= 0;
                 end
             end
-	        mmio_write_count <= 3'b0;
+	        mmio_write_count <= 4'b0;
             k <= '0;
         end
         else begin
             case(state)
                 IDLE: begin
+
                     for(int x = 0; x < 4; x++) begin
                         for(int y = 0; y < 4; y++) begin
                             regC[x][y] <= 0;
                         end
                     end
+
                     k <= '0;
                     mmio_write_count <= '0;
                 end
@@ -220,7 +222,7 @@ module matmul
                 end
 
                 TRANSFER: begin
-                    // we write result into regC[i][j], then call signal to clear it in comb output block
+                    // write result into regC[i][j]
                     for(int x = 0; x < 4; x++) begin
                         for(int y = 0; y < 4; y++) begin
                             regC[x][y] <= result[x][y];
@@ -228,6 +230,7 @@ module matmul
                     end
                     k <= '0;
                 end
+		
                 WRITE: begin
                     mmio_write_count <= mmio_write_count_n;
                 end
